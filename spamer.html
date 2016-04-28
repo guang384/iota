@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Spamer 0.0.1</title>
+<script type="text/javascript">
+/**
+ * Util Functions copy and adjust from nostalgia.html
+ */
+function sendRequest(requestData, callback) {
+	var url = "http://127.0.0.1:999";
+	log( "Send an request to " + url + " with data "+ JSON.stringify(requestData) );
+	var request = new XMLHttpRequest();
+	request.open("POST", url);
+	request.onreadystatechange = function() {
+		if (this.readyState == 4) {
+			var json = JSON.parse(this.responseText);
+			if (json.exception) {
+				alert(json.exception);
+			} else if (json.error) {
+				alert(json.error);
+			} else {
+				callback(json);
+			}
+		}
+	};
+	request.send(requestData);
+}
+
+function getTips(callback) {
+	sendRequest("{'command': 'getTransactionsToApprove'}", function(json){
+		trunkTransaction = json.trunkTransaction;
+		branchTransaction = json.branchTransaction;
+		log("Got tips : " + JSON.stringify(json) );
+		callback();
+	});
+}
+/**
+ * Spammer 
+ * code by guang384
+ */
+Date.prototype.Format = function(fmt)   
+{ //author: meizz   
+  var o = {   
+    "M+" : this.getMonth()+1,                  
+    "d+" : this.getDate(),                   
+    "h+" : this.getHours(),                    
+    "m+" : this.getMinutes(),                
+    "s+" : this.getSeconds(),                
+    "q+" : Math.floor((this.getMonth()+3)/3),  
+    "S"  : this.getMilliseconds()              
+  };   
+  if(/(y+)/.test(fmt))   
+    fmt=fmt.replace(RegExp.$1, (this.getFullYear()+"").substr(4 - RegExp.$1.length));   
+  for(var k in o)   
+    if(new RegExp("("+ k +")").test(fmt))   
+  fmt = fmt.replace(RegExp.$1, (RegExp.$1.length==1) ? (o[k]) : (("00"+ o[k]).substr((""+ o[k]).length)));   
+  return fmt;   
+}  
+
+function log(text){
+	var dom = document.getElementById("logs");
+	dom.innerHTML = "["+new Date().Format("yyyy-MM-dd hh:mm:ss.S")+"] " + text + "<br/>\n" + dom.innerHTML;
+}
+var counter = 0;
+var start = new Date().getTime();
+function doSpamming(json) {
+	if (typeof json != 'undefined'){
+		counter++;
+		log( "Got tx: " + JSON.stringify(json) );
+		log( "Total tx maked : " + counter );
+		var seconds = ( new Date().getTime() - start ) / 1000.0;
+		log("TPS for this thread: " + ( counter / seconds ) );
+	}
+	log( "Start to make a tx..." );
+	getTips(function(){
+		sendRequest(
+			"{ " +
+			"    'command': 'generateNewAddress', " +
+			"    'seed': 'SPAM99999999999999999999999999999999999999999999999999999999999999999999999999999', " +
+			"    'securityLevel': 1, " +
+			"    'approvedTrunkTransaction': '" + trunkTransaction + "', " +
+			"    'approvedBranchTransaction': '" + branchTransaction + "', " +
+			"    'minWeightMagnitude': 9, " +
+			"    'tips': ['" + trunkTransaction + "', '" + branchTransaction + "'] " +
+			"}", 
+			doSpamming
+		)
+	})
+}
+
+</script>
+<style>
+body{
+	white-space:nowrap; 
+}
+</style>
+</head>
+<body onload="doSpamming()">
+<div id="logs"></div>
+</body>
+</html>
