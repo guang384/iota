@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Spamer 0.0.1</title>
+<title>Spamer for 0.9.3</title>
 <script type="text/javascript">
 /**
  * Util Functions copy and adjust from nostalgia.html
@@ -27,14 +27,6 @@ function sendRequest(requestData, callback) {
 	request.send(requestData);
 }
 
-function getTips(callback) {
-	sendRequest("{'command': 'getTransactionsToApprove'}", function(json){
-		trunkTransaction = json.trunkTransaction;
-		branchTransaction = json.branchTransaction;
-		log("Got tips : " + JSON.stringify(json) );
-		callback();
-	});
-}
 /**
  * Spammer 
  * code by guang384
@@ -64,29 +56,20 @@ function log(text){
 }
 var counter = 0;
 var start = new Date().getTime();
-function doSpamming(json) {
-	if (typeof json != 'undefined'){
-		counter++;
-		log( "Got tx: " + JSON.stringify(json) );
-		log( "Total tx maked : " + counter );
-		var seconds = ( new Date().getTime() - start ) / 1000.0;
-		log("TPS for this thread: " + ( counter / seconds ) );
-	}
+function doSpamming() {
 	log( "Start to make a tx..." );
-	getTips(function(){
-		sendRequest(
-			"{ " +
-			"    'command': 'generateNewAddress', " +
-			"    'seed': 'SPAM99999999999999999999999999999999999999999999999999999999999999999999999999999', " +
-			"    'securityLevel': 1, " +
-			"    'approvedTrunkTransaction': '" + trunkTransaction + "', " +
-			"    'approvedBranchTransaction': '" + branchTransaction + "', " +
-			"    'minWeightMagnitude': 9, " +
-			"    'tips': ['" + trunkTransaction + "', '" + branchTransaction + "'] " +
-			"}", 
-			doSpamming
-		)
-	})
+	var seed = 'SPAM99999999999999999999999999999999999999999999999999999999999999999999999999999';
+	sendRequest(
+		"{'command': 'generateNewAddress', 'seed': '" + seed + "', 'securityLevel': 1, 'minWeightMagnitude': 9}", 
+		function(json){
+			counter++;
+			log( "Got tx: " + JSON.stringify(json) );
+			log( "Total tx maked : " + counter );
+			var seconds = ( new Date().getTime() - start ) / 1000.0;
+			log("TPS for this thread: " + ( counter / seconds ) );
+			doSpamming();
+		}
+	);
 }
 
 </script>
